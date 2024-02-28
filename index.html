@@ -21,7 +21,7 @@
             height: 40px;
             background-color: #252526;
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-end;
             padding: 0 10px;
             align-items: center;
         }
@@ -76,14 +76,25 @@
 
         .window {
             position: absolute;
-            top: 50px;
-            left: 50px;
             width: 300px;
-            height: 200px;
             background-color: #fff;
             border: 2px solid #0078d4;
             display: none;
             z-index: 2;
+        }
+
+        .window-header {
+            background-color: #0078d4;
+            color: #fff;
+            padding: 5px;
+            cursor: move;
+            user-select: none;
+        }
+
+        .window-content {
+            padding: 10px;
+            max-height: 200px;
+            overflow-y: auto;
         }
 
         .close-button {
@@ -94,46 +105,106 @@
             color: #0078d4;
             font-weight: bold;
         }
+
+        .minimize-button {
+            position: absolute;
+            top: 5px;
+            right: 30px;
+            cursor: pointer;
+            color: #0078d4;
+            font-weight: bold;
+        }
+
+        .maximize-button {
+            position: absolute;
+            top: 5px;
+            right: 55px;
+            cursor: pointer;
+            color: #0078d4;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
     <div class="taskbar">
-        <button class="start-button">Start</button>
-        <div class="system-tray">System Tray</div>
-    </div>
-
-    <div class="start-menu">
-        <div class="start-menu-item" onclick="openWindow('Notepad')">Notepad</div>
-        <div class="start-menu-item" onclick="openWindow('Calculator')">Calculator</div>
+        <button class="start-button" onclick="toggleStartMenu()">Start</button>
+        <div class="start-menu">
+            <div class="start-menu-item" onclick="openWindow('Notepad')">Notepad</div>
+            <div class="start-menu-item" onclick="openWindow('Calculator')">Calculator</div>
+        </div>
     </div>
 
     <div class="desktop-icon" style="top: 100px; left: 100px;" onclick="openWindow('Notepad')">Notepad</div>
     <div class="desktop-icon" style="top: 150px; left: 150px;" onclick="openWindow('Calculator')">Calculator</div>
 
     <div class="window" id="Notepad">
-        <div class="close-button" onclick="closeWindow('Notepad')">X</div>
-        <h2>Notepad</h2>
-        <textarea rows="8" cols="25"></textarea>
+        <div class="window-header">
+            Notepad
+            <span class="minimize-button" onclick="minimizeWindow('Notepad')">-</span>
+            <span class="maximize-button" onclick="maximizeWindow('Notepad')">□</span>
+            <span class="close-button" onclick="closeWindow('Notepad')">X</span>
+        </div>
+        <div class="window-content">
+            <textarea rows="8" cols="25"></textarea>
+        </div>
     </div>
 
     <div class="window" id="Calculator">
-        <div class="close-button" onclick="closeWindow('Calculator')">X</div>
-        <h2>Calculator</h2>
-        <input type="text" id="calc-display" readonly>
-        <br>
-        <button onclick="appendToDisplay('1')">1</button>
-        <button onclick="appendToDisplay('2')">2</button>
-        <button onclick="appendToDisplay('+')">+</button>
-        <button onclick="calculate()">=</button>
+        <div class="window-header">
+            Calculator
+            <span class="minimize-button" onclick="minimizeWindow('Calculator')">-</span>
+            <span class="maximize-button" onclick="maximizeWindow('Calculator')">□</span>
+            <span class="close-button" onclick="closeWindow('Calculator')">X</span>
+        </div>
+        <div class="window-content">
+            <input type="text" id="calc-display" readonly>
+            <br>
+            <button onclick="appendToDisplay('1')">1</button>
+            <button onclick="appendToDisplay('2')">2</button>
+            <button onclick="appendToDisplay('+')">+</button>
+            <button onclick="calculate()">=</button>
+        </div>
     </div>
 
     <script>
+        let activeWindows = {};
+
+        function toggleStartMenu() {
+            const startMenu = document.querySelector('.start-menu');
+            startMenu.style.display = startMenu.style.display === 'none' ? 'block' : 'none';
+        }
+
         function openWindow(windowId) {
-            document.getElementById(windowId).style.display = 'block';
+            const window = document.getElementById(windowId);
+            if (window) {
+                window.style.display = 'block';
+                activeWindows[windowId] = true;
+            }
         }
 
         function closeWindow(windowId) {
-            document.getElementById(windowId).style.display = 'none';
+            const window = document.getElementById(windowId);
+            if (window) {
+                window.style.display = 'none';
+                delete activeWindows[windowId];
+            }
+        }
+
+        function minimizeWindow(windowId) {
+            const window = document.getElementById(windowId);
+            if (window) {
+                window.style.display = 'none';
+            }
+        }
+
+        function maximizeWindow(windowId) {
+            const window = document.getElementById(windowId);
+            if (window) {
+                window.style.width = '100%';
+                window.style.height = '100%';
+                window.style.top = '0';
+                window.style.left = '0';
+            }
         }
 
         function appendToDisplay(value) {
@@ -147,6 +218,51 @@
                 document.getElementById('calc-display').value = result;
             } catch (error) {
                 document.getElementById('calc-display').value = 'Error';
+            }
+        }
+
+        // Make windows draggable
+        dragElement(document.getElementById('Notepad'));
+        dragElement(document.getElementById('Calculator'));
+
+        function dragElement(elmnt) {
+            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+            if (document.getElementById(elmnt.id + '-header')) {
+                // if present, the header is where you move the DIV from:
+                document.getElementById(elmnt.id + '-header').onmousedown = dragMouseDown;
+            } else {
+                // otherwise, move the DIV from anywhere inside the DIV:
+                elmnt.onmousedown = dragMouseDown;
+            }
+
+            function dragMouseDown(e) {
+                e = e || window.event;
+                e.preventDefault();
+                // get the mouse cursor position at startup:
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                document.onmouseup = closeDragElement;
+                // call a function whenever the cursor moves:
+                document.onmousemove = elementDrag;
+            }
+
+            function elementDrag(e) {
+                e = e || window.event;
+                e.preventDefault();
+                // calculate the new cursor position:
+                pos1 = pos3 - e.clientX;
+                pos2 = pos4 - e.clientY;
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                // set the element's new position:
+                elmnt.style.top = (elmnt.offsetTop - pos2) + 'px';
+                elmnt.style.left = (elmnt.offsetLeft - pos1) + 'px';
+            }
+
+            function closeDragElement() {
+                // stop moving when mouse button is released:
+                document.onmouseup = null;
+                document.onmousemove = null;
             }
         }
     </script>
