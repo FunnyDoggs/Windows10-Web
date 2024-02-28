@@ -21,7 +21,7 @@
             height: 40px;
             background-color: #252526;
             display: flex;
-            justify-content: flex-end;
+            justify-content: space-between;
             padding: 0 10px;
             align-items: center;
         }
@@ -127,11 +127,11 @@
 </head>
 <body>
     <div class="taskbar">
-        <button class="start-button" onclick="toggleStartMenu()">Start</button>
         <div class="start-menu">
             <div class="start-menu-item" onclick="openWindow('Notepad')">Notepad</div>
             <div class="start-menu-item" onclick="openWindow('Calculator')">Calculator</div>
         </div>
+        <button class="start-button" onclick="toggleStartMenu()">Start</button>
     </div>
 
     <div class="desktop-icon" style="top: 100px; left: 100px;" onclick="openWindow('Notepad')">Notepad</div>
@@ -260,7 +260,7 @@
             }
 
             function closeDragElement() {
-                // stop moving when mouse button is released:
+                // stop moving when the mouse button is released:
                 document.onmouseup = null;
                 document.onmousemove = null;
             }
